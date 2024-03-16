@@ -20,6 +20,7 @@ class PingPongView@JvmOverloads constructor(
     private var ballSpeedX = 10f
     private var ballSpeedY = 10f
 
+    private var targetPaddleX = 0f // 新增变量，用于记录目标挡板位置
     private var paddleX = 0f
     private var paddleWidth = 300f
     private var paddleHeight = 40f
@@ -46,6 +47,7 @@ class PingPongView@JvmOverloads constructor(
         super.onSizeChanged(w, h, oldw, oldh)
         // 初始化挡板的位置
         paddleX = (width - paddleWidth) / 2
+        targetPaddleX = (width - paddleWidth) / 2
         // 初始化球的位置在挡板中心
         ballX = paddleX + paddleWidth / 2
         ballY = height - paddleHeight - ballRadius * 2 // 确保球在挡板上方
@@ -77,6 +79,7 @@ class PingPongView@JvmOverloads constructor(
         paint.color = android.graphics.Color.RED
         canvas.drawCircle(ballX, ballY, ballRadius, paint)
 
+        paddleX += (targetPaddleX - paddleX) * 0.25f // 使用简单的线性插值来平滑移动
         // 画挡板
         paint.color = android.graphics.Color.BLUE
         canvas.drawRect(paddleX, height - paddleHeight, paddleX + paddleWidth, height.toFloat(), paint)
@@ -196,7 +199,7 @@ class PingPongView@JvmOverloads constructor(
                     ballX = paddleX + paddleWidth / 2
                 }else{
                     // 更新挡板位置,未发射时不允许移动挡板
-                    paddleX = event.x - paddleWidth / 2
+                    targetPaddleX = event.x - paddleWidth / 2
                 }
                 invalidate()
             }
