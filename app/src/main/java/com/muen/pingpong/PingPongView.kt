@@ -35,10 +35,21 @@ class PingPongView@JvmOverloads constructor(
     private val blockCount = 10
     private val blockPadding = 5f // 方块之间的间距
     private val rows = 10 // 顶部行数
+    private var ballLaunched = false // 新增变量，用于跟踪球是否已发射
+    private var initialTouchY = 0f // 新增变量，用于记录手指按下时的Y坐标
+    private var initialTouchX = 0f // 新增变量，用于记录手指按下时的X坐标
+    private val maxSpeed = 20f // 新增变量，用于限制球的最大速度
+    private val minSpeed = 15f // 新增变量，用于限制球的最小速度
 
     // 在onSizeChanged方法中初始化方块
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
+        // 初始化挡板的位置
+        paddleX = (width - paddleWidth) / 2
+        // 初始化球的位置在挡板中心
+        ballX = paddleX + paddleWidth / 2
+        ballY = height - paddleHeight - ballRadius * 2 // 确保球在挡板上方
+
         while (blocks.size < blockCount) {
             var overlap = false
             val x = Random.nextFloat() * (width - blockWidth)
@@ -72,8 +83,10 @@ class PingPongView@JvmOverloads constructor(
 
         if (!gameOver) {
             // 更新球的位置
-            ballX += ballSpeedX
-            ballY += ballSpeedY
+            if (ballLaunched) {
+                ballX += ballSpeedX
+                ballY += ballSpeedY
+            }
 
             // 绘制方块以及边框
             paint.color = android.graphics.Color.GREEN
@@ -145,9 +158,46 @@ class PingPongView@JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                // 记录手指按下时的位置
+                initialTouchY = event.y
+                initialTouchX = event.x
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                // 用户手指离开屏幕，如果球还未发射，则发射球
+                if (!ballLaunched) {
+                    val deltaY = initialTouchY - event.y
+                    val deltaX = event.x - initialTouchX
+                    // 根据滑动的距离计算球的速度
+                    var speedY = -deltaY / 10
+                    var speedX = deltaX / 10
+                    // 计算速度的实际大小
+                    val speedMagnitude = Math.sqrt((speedX * speedX + speedY * speedY).toDouble()).toFloat()
+                    // 如果速度太快或太慢，重新调整速度
+                    if (speedMagnitude > maxSpeed) {
+                        speedY *= maxSpeed / speedMagnitude
+                        speedX *= maxSpeed / speedMagnitude
+                    } else if (speedMagnitude < minSpeed && speedMagnitude > 0) {
+                        speedY *= minSpeed / speedMagnitude
+                        speedX *= minSpeed / speedMagnitude
+                    }
+                    // 设置球的速度
+                    ballSpeedY = speedY
+                    ballSpeedX = speedX
+
+                    ballLaunched = true // 更新状态，表示球已发射
+                    invalidate() // 请求重绘视图
+                }
+            }
             MotionEvent.ACTION_MOVE -> {
-                // Update the position of the paddle
-                paddleX = event.x - paddleWidth / 2
+                // 如果球还没有发射，更新球的位置使其位于挡板中心
+                if (!ballLaunched) {
+                    ballX = paddleX + paddleWidth / 2
+                }else{
+                    // 更新挡板位置,未发射时不允许移动挡板
+                    paddleX = event.x - paddleWidth / 2
+                }
                 invalidate()
             }
         }
