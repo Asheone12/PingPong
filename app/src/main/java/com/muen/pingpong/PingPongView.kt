@@ -19,6 +19,8 @@ class PingPongView@JvmOverloads constructor(
     private var ballRadius = 20f
     private var ballSpeedX = 10f
     private var ballSpeedY = 10f
+    private val speedIncreaseFactor = 1.1f // 定义速度增加的因子
+    private val maxSpeed = 50f
 
     private var targetPaddleX = 0f // 新增变量，用于记录目标挡板位置
     private var paddleX = 0f
@@ -39,8 +41,8 @@ class PingPongView@JvmOverloads constructor(
     private var ballLaunched = false // 新增变量，用于跟踪球是否已发射
     private var initialTouchY = 0f // 新增变量，用于记录手指按下时的Y坐标
     private var initialTouchX = 0f // 新增变量，用于记录手指按下时的X坐标
-    private val maxSpeed = 20f // 新增变量，用于限制球的最大速度
-    private val minSpeed = 15f // 新增变量，用于限制球的最小速度
+    private val maxInitSpeed = 20f // 新增变量，用于限制球初始的最大速度
+    private val minInitSpeed = 15f // 新增变量，用于限制球初始的最小速度
 
     // 在onSizeChanged方法中初始化方块
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -125,6 +127,11 @@ class PingPongView@JvmOverloads constructor(
                 ballSpeedY = -ballSpeedY
                 //score++  // 球触碰到顶部，分数增加
             } else if (ballY > height - paddleHeight - ballRadius && ballX > paddleX && ballX < paddleX + paddleWidth) {
+                // 当球速小于最大速度时增加球的速度
+                if(ballSpeedX < maxSpeed && ballSpeedY < maxSpeed){
+                    ballSpeedX *= speedIncreaseFactor
+                    ballSpeedY *= speedIncreaseFactor
+                }
                 ballSpeedY = -ballSpeedY
             } else if (ballY > height - ballRadius) {
                 // 球触碰到屏幕底部，游戏结束
@@ -178,12 +185,12 @@ class PingPongView@JvmOverloads constructor(
                     // 计算速度的实际大小
                     val speedMagnitude = Math.sqrt((speedX * speedX + speedY * speedY).toDouble()).toFloat()
                     // 如果速度太快或太慢，重新调整速度
-                    if (speedMagnitude > maxSpeed) {
-                        speedY *= maxSpeed / speedMagnitude
-                        speedX *= maxSpeed / speedMagnitude
-                    } else if (speedMagnitude < minSpeed && speedMagnitude > 0) {
-                        speedY *= minSpeed / speedMagnitude
-                        speedX *= minSpeed / speedMagnitude
+                    if (speedMagnitude > maxInitSpeed) {
+                        speedY *= maxInitSpeed / speedMagnitude
+                        speedX *= maxInitSpeed / speedMagnitude
+                    } else if (speedMagnitude < minInitSpeed && speedMagnitude > 0) {
+                        speedY *= minInitSpeed / speedMagnitude
+                        speedX *= minInitSpeed / speedMagnitude
                     }
                     // 设置球的速度
                     ballSpeedY = speedY
